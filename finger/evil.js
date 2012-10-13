@@ -111,7 +111,8 @@ $(function() {
 				lowdiffs &&
 				delay == 0 &&
 				Math.abs(xdifferences[0]) > THRESHOLD &&
-				Math.abs(xdifferences[3]) > THRESHOLD) {
+				Math.abs(xdifferences[3]) > THRESHOLD &&
+				Math.abs(Math.abs(xdifferences[0]) - Math.abs(xdifferences[3])) < 2) {
 				console.log(xsections, xprevsections, xdifferences, (xsections[0]+xsections[1]+xsections[2]+xsections[3])/4);
 				inarow ++;
 				if (xdifferences[0] < 0 && xdifferences[3] < 0) {
