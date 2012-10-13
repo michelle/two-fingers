@@ -1,4 +1,5 @@
 $(function() {
+	// TODO: Q-learning, says Hai
 	var WIDTH = 40;
 	var HEIGHT = 10;
 	var SECTIONS = 4;
