@@ -3,7 +3,7 @@ $(function() {
 	var WIDTH = 40;
 	var HEIGHT = 10;
 	var SECTIONS = 4;
-	var SAMPLES = 15;
+	var SAMPLES = 13;
 	var THRESHOLD = 5;
 	var video = document.querySelector('video');
 	var canvas = document.querySelector('canvas');
@@ -15,8 +15,11 @@ $(function() {
 	var inarow = 0;
 	
 	var it = 0;
+	var delay = 0
 
 	function snapshot() {
+		// TODO: add buffer between sections to allow for some error.
+	  delay = 0;
 	  if (localMediaStream) {
 		ctx.drawImage(video, 0, 0, WIDTH, HEIGHT);
 		
@@ -41,8 +44,10 @@ $(function() {
 			} else {
 				if (inarow < 3 && inarow > 0 && it != 0) {
 					console.log('do something');
+					delay = 300;
 				} else if (inarow > 0) {
 					console.log('too much movement!')
+					delay = 1000;
 				}
 				inarow = 0;
 			}
@@ -61,7 +66,10 @@ $(function() {
 		it++;
 		*/
 	  }
-	  window.webkitRequestAnimationFrame(snapshot);
+	
+	  setTimeout(function() {
+		window.webkitRequestAnimationFrame(snapshot);
+	  }, delay);
 	}
 	
 	/*function drawHull(hull, color) {
