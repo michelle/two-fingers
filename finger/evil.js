@@ -12,6 +12,7 @@ $(function() {
 	var YSECTIONS = 4;
 	var SAMPLES = 5;
 	var THRESHOLD = 4;
+	var YTHRESHOLD = 2
 	var DELAY = 50;
 	
 	var video = document.querySelector('video');
@@ -23,12 +24,15 @@ $(function() {
 	var localMediaStream = null;
 	var xsections, xprevsections, ysections, yprevsections;
 	var inarow = 0;
+	var yinarow = 0;
 	
 	var it = 0;
 	var delay = 0;
 	ctx.translate(WIDTH, 0);
 	ctx.scale(-1, 1);
 	var action = 'back';
+	
+	var movingavg = [];
 	
 	// guidelines
 	function drawLines() {
@@ -64,13 +68,16 @@ $(function() {
 			var xsections = [];
 			var ysections = [];
 			var xdifferences = [];
+			var ydifferences = [];
 			
 			for (var i = 0; i < XSECTIONS; i++) {
 				xsections[i] = 0;
 				xdifferences[i] = 0;
+				movingavg[i] = 0;
 			}
 			for (var i = 0; i < YSECTIONS; i++) {
 				ysections[i] = 0;
+				ydifferences[i] = 0;
 			}
 			for (var i = 0; i < pixels.length; i += 4) {
 				xsections[(i/4) % XSECTIONS] += pixels[i];
@@ -85,20 +92,25 @@ $(function() {
 			
 			// take avg and find all diffs
 			var lowdiffs = true;
+			var ylowdiffs = true;
 			
 			// check that the top is unmoving.
-			for (var i in ysections) {
-				ysections[i] = Math.round(ysections[i] / ((WIDTH * HEIGHT) / YSECTIONS));
-			}
-				
 			if (yprevsections) {
+				for (var i in ysections) {
+					ysections[i] = /*Math.round(*/ysections[i] / ((WIDTH * HEIGHT) / YSECTIONS)/*)*/;
+
+					ydifferences[i] = (yprevsections[i] - ysections[i]);
+					if (Math.abs(ydifferences[i]) > 9) {
+						ylowdiffs = false;
+					}
+				}
 				if (Math.abs(yprevsections[0] - ysections[0]) > 1) {
 					lowdiffs = false;
 				}
 			}
-			for (var i in xsections) {
-				xsections[i] = /*Math.round(*/xsections[i] / ((WIDTH * HEIGHT) / XSECTIONS)/*)*/;
-				if (xprevsections) {
+			if (xprevsections) {
+				for (var i in xsections) {
+					xsections[i] = /*Math.round(*/xsections[i] / ((WIDTH * HEIGHT) / XSECTIONS)/*)*/;
 					xdifferences[i] = (xprevsections[i] - xsections[i]);
 					if (Math.abs(xdifferences[i]) > 9) {
 						lowdiffs = false;
@@ -113,12 +125,15 @@ $(function() {
 				delay == 0 &&
 				Math.abs(xdifferences[0]) > THRESHOLD &&
 				Math.abs(xdifferences[3]) > THRESHOLD &&
-				Math.abs(Math.abs(xdifferences[0]) - Math.abs(xdifferences[3])) < 2) {
+				Math.abs(Math.abs(xdifferences[0]) - Math.abs(xdifferences[3])) < 1.5) {
 				console.log(xsections, xprevsections, xdifferences, ysections);
 				inarow ++;
-				if (xdifferences[0] < 0 && xdifferences[3] < 0) {
+				/*if (xdifferences[0] < 0 && xdifferences[3] < 0) {
 					action = 'back';
 				} else {
+					action = 'forward';
+				}*/
+				if (Math.abs(xdifferences[0] - movingavg[0]) < .5) {
 					action = 'forward';
 				}
 			} else {
@@ -129,14 +144,38 @@ $(function() {
 					doSomething(action);
 					delay = DELAY;
 				} else if (inarow > 0) {
-					console.log('too much movement!')
+					console.log('too much movement!');
 					delay = DELAY;
 				}
 				inarow = 0;
+				
+				for (var i in movingavg) {
+					movingavg[i] = (xsections[i] + xprevsections[i]) / 2;
+				}
 			}
 			
 			// heuristic for top-bottom.
-			
+			/*if (yprevsections &&
+				ylowdiffs &&
+				delay == 0 &&
+				Math.abs(ydifferences[2]) > YTHRESHOLD &&
+				Math.abs(ydifferences[3]) > YTHRESHOLD &&
+				Math.abs(ydifferences[2]) - Math.abs(ydifferences[3]) < 1.5) {
+				console.log(ysections, yprevsections, ydifferences)
+				yinarow ++;
+				action = 'up';
+			} else {
+				if (yinarow < 4 && yinarow > 0 && it != 0) {
+					console.log('do something - y');
+					
+					doSomething(action);
+					delay = DELAY;
+				} else if (yinarow > 0) {
+					console.log('too much movement - y!');
+					delay = DELAY;
+				}
+				yinarow = 0;
+			}*/
 			
 			
 			xprevsections = xsections;
