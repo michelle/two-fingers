@@ -4,9 +4,19 @@
 <script src="/js/cv.js"></script>
 <script src="/js/handtracking.js"></script>
 <!--script src="/js/camera.js"></script-->
+<style>
+#cam, #grid {
+	position: absolute;
+	top: 0;
+	left: 0;
+}
+</style>
 </head>
 <body>
-<video width="40" height="10" autoplay></video>
-<canvas style="display:block;" width="40" height="10"></canvas>
+<video width="40" height="40" style="display:none;" autoplay></video>
+
+<canvas id="cam" style="display:block;" width="40" height="40"></canvas>
+<canvas id="grid" width="40" height="40"></canvas>
+
 </body>
 </html>
