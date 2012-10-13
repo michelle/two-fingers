@@ -5,12 +5,17 @@
   "description": "Use your finger to do great things.",
   "icons": { "16": "icon.png" },
   "permissions": [
-    "videoCapture",
     "tabs"
   ],
-  "app": {
-    "background": {
-      "page": "window.html"
+  "background": {
+    "scripts": ["background.js"]
+    "persistent": false
+  },
+  "content_scripts": [
+    {
+      "matches": ["http://localhost:8000/camera.html"],
+      "css": ["mystyles.css"],
+      "js": ["jquery.js", "myscript.js"]
     }
-  }
+  ],
 }
