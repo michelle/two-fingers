@@ -4,6 +4,7 @@ $(function() {
 	var HEIGHT = 10;
 	var SECTIONS = 4;
 	var SAMPLES = 15;
+	var THRESHOLD = 5;
 	var video = document.querySelector('video');
 	var canvas = document.querySelector('canvas');
 	var ctx = canvas.getContext('2d');
@@ -34,11 +35,11 @@ $(function() {
 			for (var i in sections) {
 				sections[i] = Math.round(sections[i] / ((WIDTH * HEIGHT) / SECTIONS));
 			}
-			if (prevsections && Math.abs(prevsections[1] - sections[1]) > 5 && Math.abs(prevsections[2] - sections[2]) > 5) {
-				console.log(sections);
+			if (prevsections && Math.abs(prevsections[1] - sections[1]) > THRESHOLD && Math.abs(prevsections[2] - sections[2]) > THRESHOLD) {
+				console.log(sections, prevsections);
 				inarow ++;
 			} else {
-				if (inarow < 3 && inarow > 0) {
+				if (inarow < 3 && inarow > 0 && it != 0) {
 					console.log('do something');
 				} else if (inarow > 0) {
 					console.log('too much movement!')
