@@ -10,8 +10,8 @@ $(function() {
 	var HEIGHT = 40;
 	var XSECTIONS = 4;
 	var YSECTIONS = 4;
-	var SAMPLES = 5;
-	var THRESHOLD = 4;
+	var SAMPLES = 1;
+	var THRESHOLD = 2;
 	var YTHRESHOLD = 2
 	var DELAY = 50;
 	
@@ -32,7 +32,10 @@ $(function() {
 	ctx.scale(-1, 1);
 	var action = 'back';
 	
-	var movingavg = [];
+	// new impl
+	var ack = 0;
+	var activated = false;
+	var forward = false;
 	
 	// guidelines
 	function drawLines() {
@@ -55,12 +58,13 @@ $(function() {
 		}
 	}
 	
+	drawLines();
+	
 	function snapshot() {
 		// TODO: add buffer between sections to allow for some error.
 	  if (localMediaStream) {
 		ctx.drawImage(video, 0, 0, WIDTH, HEIGHT);
 		
-		drawLines();
 		if (it % SAMPLES == 0) {
 		
 			var pixels = ctx.getImageData(0, 0, WIDTH, HEIGHT).data;
@@ -73,7 +77,6 @@ $(function() {
 			for (var i = 0; i < XSECTIONS; i++) {
 				xsections[i] = 0;
 				xdifferences[i] = 0;
-				movingavg[i] = 0;
 			}
 			for (var i = 0; i < YSECTIONS; i++) {
 				ysections[i] = 0;
@@ -94,27 +97,52 @@ $(function() {
 			var lowdiffs = true;
 			var ylowdiffs = true;
 			
+
+			if (xprevsections) {
+				for (var i in xsections) {
+					xsections[i] = /*Math.round(*/xsections[i] / ((WIDTH * HEIGHT) / XSECTIONS)/*)*/;
+					
+					
+					xdifferences[i] = (xprevsections[i] - xsections[i]);
+					if (Math.abs(xdifferences[i]) > 8) {
+						lowdiffs = false;
+					}
+					if (!activated && Math.abs(xdifferences[i]) > THRESHOLD && !lowdiffs) {
+						if (i == 0) {
+							activated = true;
+							forward = true;
+							console.log('start to track forward');
+						}
+						if (i == xsections.length - 1) {
+							activated = true;
+							forward = false;
+							console.log('start to track back');
+						}
+						ack = i;
+					} /*else if (activated && Math.abs(xdifferences[i]) > THRESHOLD) {
+						if (Math.abs(xdifferences[i - 1]) <= THRESHOLD || lowdiffs) {
+							activated = false;
+							console.log('cancel activation');
+						} else {
+							ack = i;
+						}
+					}*/
+					
+				}
+			}
+			
 			// check that the top is unmoving.
 			if (yprevsections) {
 				for (var i in ysections) {
 					ysections[i] = /*Math.round(*/ysections[i] / ((WIDTH * HEIGHT) / YSECTIONS)/*)*/;
 
 					ydifferences[i] = (yprevsections[i] - ysections[i]);
-					if (Math.abs(ydifferences[i]) > 9) {
+					if (Math.abs(ydifferences[i]) > 8) {
 						ylowdiffs = false;
 					}
 				}
 				if (Math.abs(yprevsections[0] - ysections[0]) > 1) {
 					lowdiffs = false;
-				}
-			}
-			if (xprevsections) {
-				for (var i in xsections) {
-					xsections[i] = /*Math.round(*/xsections[i] / ((WIDTH * HEIGHT) / XSECTIONS)/*)*/;
-					xdifferences[i] = (xprevsections[i] - xsections[i]);
-					if (Math.abs(xdifferences[i]) > 9) {
-						lowdiffs = false;
-					}
 				}
 			}
 			
@@ -128,12 +156,9 @@ $(function() {
 				Math.abs(Math.abs(xdifferences[0]) - Math.abs(xdifferences[3])) < 1.5) {
 				console.log(xsections, xprevsections, xdifferences, ysections);
 				inarow ++;
-				/*if (xdifferences[0] < 0 && xdifferences[3] < 0) {
+				if (xdifferences[0] < 0 && xdifferences[3] < 0) {
 					action = 'back';
 				} else {
-					action = 'forward';
-				}*/
-				if (Math.abs(xdifferences[0] - movingavg[0]) < .5) {
 					action = 'forward';
 				}
 			} else {
@@ -149,10 +174,30 @@ $(function() {
 				}
 				inarow = 0;
 				
-				for (var i in movingavg) {
-					movingavg[i] = (xsections[i] + xprevsections[i]) / 2;
-				}
 			}
+			
+			/*
+			var first = true;
+			while (activated && ((forward && ack < xdifferences.length) || (!forward && ack >= 0))) {
+				console.log(xsections, xprevsections, xdifferences);
+				if (Math.abs(xdifferences[ack]) > THRESHOLD && Math.abs(xdifferences[ack]) <= 8) {
+					ack = forward ? ack + 1 : ack - 1;
+				} else {
+					if (first) {
+						activated = false;
+						console.log('broked', xdifferences);
+					}
+					break;
+				}
+				first = false;
+			}
+			if (activated && ((forward && ack == xdifferences.length) || (!forward && ack == -1))) {
+				console.log('command activated');
+				activated = false;
+				var command = forward ? 'forward' : 'back';
+				doSomething(command);
+				delay = DELAY;
+			}*/
 			
 			// heuristic for top-bottom.
 			/*if (yprevsections &&
@@ -178,21 +223,21 @@ $(function() {
 			}*/
 			
 			
-			xprevsections = xsections;
-			yprevsections = ysections;
-		}
-		it++;
+        xprevsections = xsections;
+        yprevsections = ysections;
+      }
+      it++;
 	  }
 	
 	  setTimeout(function() {
-		window.webkitRequestAnimationFrame(snapshot);
+      window.webkitRequestAnimationFrame(snapshot);
 	  }, 0);
 	
 	  if (delay > 0) {
-		delay--;
-		if (delay == 0) {
-			console.log('unlocked');
-		}
+      delay--;
+      if (delay == 0) {
+        console.log('unlocked');
+      }
 	  }
 	}
 	
